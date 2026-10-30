@@ -1,16 +1,26 @@
-# This is a sample Python script.
+import sqlite3 as sql
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+def init_sql(db_path, script_path):
+    try:
+        with open(script_path, "r") as file:
+            script = file.read()
 
+        with sql.connect(db_path) as conn:
+            cu = conn.cursor()
+            cu.executescript(script)
+            print("SQL database created")
+    except FileNotFoundError:
+        print("Script not found")
+    except sql.Error as e:
+        print(f"an error occurred: {e}")
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+if __name__ == "__main__":
+    init_sql('choir.db', 'setup.sql')
 
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    test = [
+        ("Cooper Hoffman", 11),
+        ("Nikhil Konagurthu", 11)
+    ]
+    with sql.connect('choir.db') as conn:
+        cu = conn.cursor()
+        cu.executemany("INSERT INTO students VALUES (?,?,?)", test)
