@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS students (
 
 CREATE TABLE IF NOT EXISTS robes (
     id INTEGER PRIMARY KEY,
-    student_id INTEGER NOT NULL,
+    student_id INTEGER,
 
     FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
 );
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS pieces (
 CREATE TABLE IF NOT EXISTS sheets (
     id INTEGER PRIMARY KEY,
     piece_id INTEGER NOT NULL,
-    student_id INTEGER NOT NULL,
+    student_id INTEGER,
 
     FOREIGN KEY (piece_id) REFERENCES pieces (id) ON DELETE CASCADE,
     FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE

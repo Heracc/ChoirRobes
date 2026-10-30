@@ -15,7 +15,7 @@ def init_sql(db_path, script_path):
         print(f"an error occurred: {e}")
 
 if __name__ == "__main__":
-    init_sql('choir.db', 'setup.sql')
+    init_sql(':memory:', 'setup.sql')
 
     test = [
         ("Cooper Hoffman", 11),
@@ -23,4 +23,4 @@ if __name__ == "__main__":
     ]
     with sql.connect('choir.db') as conn:
         cu = conn.cursor()
-        cu.executemany("INSERT INTO students VALUES (?,?,?)", test)
+        conn.commit()
