@@ -3,7 +3,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS students (
     id INTEGER PRIMARY KEY,
     name TEXT,
-    grade INTEGER,
+    grade INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS robes (
@@ -23,6 +23,6 @@ CREATE TABLE IF NOT EXISTS sheets (
     piece_id INTEGER NOT NULL,
     student_id INTEGER NOT NULL,
 
-    FOREIGN KEY (piece_id) REFERENCES pieces (id) ON DELETE CASCADE
-    FOREIGN (students) REFERENCES students (id) ON DELETE CASCADE
+    FOREIGN KEY (piece_id) REFERENCES pieces (id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
 );
