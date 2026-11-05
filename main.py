@@ -1,4 +1,5 @@
 import sqlite3 as sql
+### use * or ** and like args/kwargs or whatever to have one universal add/delete function that changes to fit wherever its used
 
 def init_sql(db_path, script_path):
     try:
