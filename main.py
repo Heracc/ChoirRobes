@@ -25,3 +25,14 @@ if __name__ == "__main__":
     with sql.connect('choir.db') as conn:
         cu = conn.cursor()
         conn.commit()
+
+""" query for sheets:
+SELECT
+    sheets.id as Sheet_ID,
+    pieces.title as Piece_ID,
+    students.name as Owner
+FROM sheets
+LEFT JOIN pieces ON sheets.piece_id = pieces.id
+LEFT JOIN students ON sheets.student_id = students.id
+ORDER BY (whatever you want);
+"""
