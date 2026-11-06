@@ -1,6 +1,16 @@
 import sqlite3 as sql
 ### use * or ** and like args/kwargs or whatever to have one universal add/delete function that changes to fit wherever its used
 
+#style shortcuts
+HEADER = '\033[95m'
+BLUE = '\033[94m'
+GREEN = '\033[92m'
+WARNING = '\033[93m'
+FAIL = '\033[91m'
+BOLD = '\033[1m'
+UNDERLINE = '\033[4m'
+RESET = '\033[0m'
+
 def init_sql(db_path, script_path):
     try:
         with open(script_path, "r") as file:
@@ -14,6 +24,9 @@ def init_sql(db_path, script_path):
         print("Script not found")
     except sql.Error as e:
         print(f"an error occurred: {e}")
+
+def main_menu():
+    print(f"{HEADER}Database App{RESET}")
 
 if __name__ == "__main__":
     init_sql(':memory:', 'setup.sql')
