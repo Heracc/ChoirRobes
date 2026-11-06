@@ -10,6 +10,8 @@ FAIL = '\033[91m'
 BOLD = '\033[1m'
 UNDERLINE = '\033[4m'
 RESET = '\033[0m'
+CARRIAGE_RETURN = '\033[F'
+CLEAR_LINE = '\033[2K'
 
 def init_sql(db_path, script_path):
     try:
@@ -26,18 +28,36 @@ def init_sql(db_path, script_path):
         print(f"an error occurred: {e}")
 
 def main_menu():
-    print(f"{HEADER}Database App{RESET}")
+    print(f"{HEADER}{BOLD}{FAIL}{"Main  Menu".center(16)}{RESET}")
+    print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
+    print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Students".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
+
+    while True:
+        user_choice = input(f"Enter an option id:")
+        match user_choice:
+            case "1":
+                robes_menu()
+            case "2":
+                students_menu()
+            case "3":
+                songs_menu()
+            case "4":
+                students_menu()
+            case "0":
+                sys.exit()
+            case _:
+                pass
+
+def robes_menu():
+
+
+def add_sample_data():
+    pass
 
 if __name__ == "__main__":
     init_sql(':memory:', 'setup.sql')
+    main_menu()
 
-    test = [
-        ("Cooper Hoffman", 11),
-        ("Nikhil Konagurthu", 11)
-    ]
-    with sql.connect('choir.db') as conn:
-        cu = conn.cursor()
-        conn.commit()
 
 """ query for sheets:
 SELECT
