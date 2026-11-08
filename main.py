@@ -1,7 +1,8 @@
 import sqlite3 as sql
+import sys
 ### use * or ** and like args/kwargs or whatever to have one universal add/delete function that changes to fit wherever its used
 
-DATABASE_PATH = ':memory:'
+DATABASE_PATH = 'choir.db'
 
 #style shortcuts
 HEADER = '\033[95m'
@@ -31,23 +32,29 @@ def init_sql(db_path, script_path):
 
 
 def robes_menu():
-    all_robes = cu.execute("SELECT * FROM {table}")
+    all_robes = cu.execute(f"""SELECT
+                                robes.id, students.name FROM robes
+                                LEFT JOIN students ON robes.student_id = students.id""").fetchall()
 
 
 
-    print(f"{HEADER}{BOLD}{FAIL}{"Robes".center(16)}{RESET}")
-    print(f" ")
-
-    print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
+    print(f"{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
+    print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17))
+    
+    for i in all_robes:
+        print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
+    sys.exit()
+    #print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
     #print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Students".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
 
 def main_menu():
-    print(f"{HEADER}{BOLD}{FAIL}{"Main  Menu".center(16)}{RESET}")
-    print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
-    print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Students".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
-
     while True:
-        user_choice = input(f"Enter an option id:")
+    
+        print(f"{HEADER}{BOLD}{FAIL}Main  Menu{RESET}".center(16))
+        print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
+        print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Students".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
+    
+        user_choice = input(f"Enter an option id: ")
         match user_choice:
             case "1":
                 robes_menu()

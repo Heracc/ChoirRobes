@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS students (
 
 CREATE TABLE IF NOT EXISTS robes (
     id INTEGER PRIMARY KEY,
-    student_id INTEGER,
+    student_id INTEGER UNIQUE,
 
     FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
 );
