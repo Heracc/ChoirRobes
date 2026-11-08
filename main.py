@@ -1,6 +1,8 @@
 import sqlite3 as sql
 ### use * or ** and like args/kwargs or whatever to have one universal add/delete function that changes to fit wherever its used
 
+DATABASE_PATH = ':memory:'
+
 #style shortcuts
 HEADER = '\033[95m'
 BLUE = '\033[94m'
@@ -18,14 +20,26 @@ def init_sql(db_path, script_path):
         with open(script_path, "r") as file:
             script = file.read()
 
-        with sql.connect(db_path) as conn:
-            cu = conn.cursor()
+        with conn:
             cu.executescript(script)
             print("SQL database created")
+
     except FileNotFoundError:
         print("Script not found")
     except sql.Error as e:
         print(f"an error occurred: {e}")
+
+
+def robes_menu():
+    all_robes = cu.execute("SELECT * FROM {table}")
+
+
+
+    print(f"{HEADER}{BOLD}{FAIL}{"Robes".center(16)}{RESET}")
+    print(f" ")
+
+    print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
+    #print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Students".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
 
 def main_menu():
     print(f"{HEADER}{BOLD}{FAIL}{"Main  Menu".center(16)}{RESET}")
@@ -48,14 +62,16 @@ def main_menu():
             case _:
                 pass
 
-def robes_menu():
 
 
 def add_sample_data():
     pass
 
 if __name__ == "__main__":
-    init_sql(':memory:', 'setup.sql')
+    conn = sql.connect(DATABASE_PATH)
+    cu = conn.cursor()
+
+    init_sql(DATABASE_PATH, 'setup.sql')
     main_menu()
 
 
