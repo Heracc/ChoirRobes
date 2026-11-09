@@ -16,7 +16,7 @@ RESET = '\033[0m'
 CARRIAGE_RETURN = '\033[F'
 CLEAR_LINE = '\033[2K'
 
-def init_sql(db_path, script_path):
+def init_sql(script_path):
     try:
         with open(script_path, "r") as file:
             script = file.read()
@@ -30,31 +30,52 @@ def init_sql(db_path, script_path):
     except sql.Error as e:
         print(f"an error occurred: {e}")
 
-
+def search(table, search_col, search_val):
+    # Courtesy of shane:
+    cu.execute("SELECT * FROM ? LIMIT 0", (table,)) #selects everything from the table but returns 0 rows (limit 0)
+    columns = [desc[0] for desc in cu.description]
+    columns.remove(search_col)
+    query = f"""
+    SELECT *
+    FROM ?
+    WHERE ? 
+    """
+#where search_col = search val
+    pass
 def robes_menu():
-    all_robes = cu.execute(f"""SELECT
-                                robes.id, students.name FROM robes
-                                LEFT JOIN students ON robes.student_id = students.id""").fetchall()
+    while True:
+        all_robes = cu.execute(f"""
+        SELECT
+            robes.id, students.name FROM robes
+            LEFT JOIN students ON robes.student_id = students.id
+            WHERE robes.student_id IS NOT 0;             
+        """).fetchall()
+        print(f"{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
+        print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17))
+        for i in all_robes:
+            print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
 
-
-
-    print(f"{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
-    print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17))
-    
-    for i in all_robes:
-        print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
-    sys.exit()
-    #print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
-    #print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Students".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
+        print(f"\n{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
+        print("Change Owners".ljust(14) + "1".ljust(2) + "\n" + "Search Robes".ljust(14) + "2".ljust(2) + "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
+        user_choice = input(f"Enter an option id >>> ")
+        match user_choice:
+            case "1":
+                assign_robes()
+            case "2":
+                search()
+            case "0":
+                break
+            case _:
+                pass
 
 def main_menu():
     while True:
-    
-        print(f"{HEADER}{BOLD}{FAIL}Main  Menu{RESET}".center(16))
+
+        print(f"\n{HEADER}{BOLD}{FAIL}Main  Menu{RESET}".center(16))
         print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
-        print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Students".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
-    
-        user_choice = input(f"Enter an option id: ")
+        print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Sheets".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
+
+        user_choice = input(f"Enter an option id >>> ")
         match user_choice:
             case "1":
                 robes_menu()
@@ -63,13 +84,11 @@ def main_menu():
             case "3":
                 songs_menu()
             case "4":
-                students_menu()
+                sheets_menu()
             case "0":
                 sys.exit()
             case _:
                 pass
-
-
 
 def add_sample_data():
     pass
@@ -78,7 +97,7 @@ if __name__ == "__main__":
     conn = sql.connect(DATABASE_PATH)
     cu = conn.cursor()
 
-    init_sql(DATABASE_PATH, 'setup.sql')
+    init_sql('setup.sql')
     main_menu()
 
 
