@@ -1,6 +1,8 @@
 import sqlite3 as sql
 import sys
+import atexit
 ### use * or ** and like args/kwargs or whatever to have one universal add/delete function that changes to fit wherever its used
+###  make it so that the search function has left joins by using a dictionary of tables and their joins 
 
 DATABASE_PATH = 'choir.db'
 
@@ -16,6 +18,12 @@ RESET = '\033[0m'
 CARRIAGE_RETURN = '\033[F'
 CLEAR_LINE = '\033[2K'
 
+def close():
+    conn.close()
+    print(f"{GREEN}{BOLD}{UNDERLINE}Database connection closed{RESET}")
+
+atexit.register(close)
+
 def init_sql(db_path, script_path):
     try:
         with open(script_path, "r") as file:
@@ -23,51 +31,113 @@ def init_sql(db_path, script_path):
 
         with conn:
             cu.executescript(script)
-            print("SQL database created")
+            print(f"{GREEN}SQL database created{RESET}")
 
     except FileNotFoundError:
-        print("Script not found")
+        print(f"{FAIL}Script not found{RESET}")
     except sql.Error as e:
-        print(f"an error occurred: {e}")
+        print(f"{FAIL}An error occurred: {e}{RESET}")
 
-def search(table, search_col, search_val):
-   # Courtesy of shane:
-   cu.execute("SELECT * FROM ? LIMIT 0", (table,)) #selects everything from the table but returns 0 rows (limit 0)
-   columns = [desc[0] for desc in cu.description] #gets column names
-   columns.remove(search_col) # 
-   # back to my code:
-   params = (search_col, search_val)
-result = cu.execute("""
-   SELECT *
-   FROM {table}
-   WHERE ? = ?
-   """,)
+def search(table):
+    ### AI MADE THIS CODE, I DONT KNOW IF IT WORKS, BUT IT SHOULD 
+    # funnily enough, as i was typing that ai disclaimer, the vs code autocomplete suggested adding the "i dont know if it works, but it should" part
+    # the code does work, but it is not very user friendly, and it is not very flexible, and it is not very efficient, and it is not very secure, and it is not very robust, and it is not very maintainable, and it is not very readable, and it is not very testable, and it is not very reusable, and it is not very extensible, and it is not very scalable, and it is not very performant, and it is not very reliable, and it is not very portable, and it is not very compatible, and it is not very interoperable, and it is not very standard-compliant, and it is not very best-practice-compliant, and it is not very industry-standard-compliant, and it is not very professional-grade-compliant, and it is not very enterprise-grade-compliant, and it is not very mission-critical-compliant, and it is not very high-availability-compliant, and it is not very fault-tolerant-compliant, and it is not very disaster-recovery-compliant, and it is not very business-continuity-compliant, and it is not very regulatory-compliant, and it is not very legal-compliant, and it is not very ethical-compliant, and it is not very moral-compliant, and it is not very socially-responsible-compliant, and it is not very environmentally-friendly-compliant, and it is not very sustainable-compliant, and it is not very green-compliant, and it is not very eco-friendly-compliant, and it is not very carbon-neutral-compliant, and it is not very energy-efficient-compliant, and it is not very water-efficient-compliant, and it is not very waste-efficient-compliant, and it is not very resource-efficient-compliant, and it is not very cost-efficient-compliant, and.
+    # okay so i was trying to say that the code does indeed work and i know how it works (both true) but after i typed "the code does work" vs code autocomplete suggested adding "but it is not very user friendly" and i was like "yeah that is true" and then it suggested adding "and it is not very flexible" and i was like "yeah that is also true" and then it suggested adding "and it is not very efficient" and i was like "yeah that is also true" and then it suggested adding "and it is not very secure" and i was like "yeah that is also true" and then it suggested adding "and it is not very robust" and i was like "yeah that is also true" and then it suggested adding "and it is not very maintainable" and i was like "yeah that is also true" and then it suggested adding "and it is not very readable" and i was like "yeah that is also true" and then it suggested adding "and it is not very testable" and i was like "yeah that is also true" and then it suggested adding "and it is not very reusable" and i was like "yeah that is also true" and then it suggested adding "and it is not very extensible" and i was like "yeah that is also true" and then it suggested adding "and it is not very scalable" and i was like "yeah that is also true" and then it suggested adding "and it is not very performant" and i was like "yeah that is also true" and then it suggested adding "and it is not very reliable" and i was like "yeah that is also true" and then it suggested adding "and it is not very portable" and i was like "yeah that is also true" and then it suggested adding "and it is not very compatible" and i was like "yeah that is also true" and then it suggested adding "and it is not very interoperable" and i was like "yeah that is also true"
+    # aaaaand it did it again. once i wrote the first quote in the line above, vs code autocomplete took it and ran again. remind me to tell you the story in class, but the gist is it just got stuck in an endless loop of suggesting things that the code isnt.
+    # anyway, i digress. the point is that the code was generated by a google ai search, it does work, (the autocomplete tried to say a bunch of bad things about the code again here) and i know how it works.
+    
+    # execute rowless query to get column names
+    cu.execute(f"SELECT * FROM {table} LIMIT 0")
+
+    # the cursor.description attribute contains metadata about the columns in the result
+    # create a list of column names
+    column_names = [desc[0] for desc in cu.description]
+    ### end ai code
+    
+    col_abbreviations = {name[0]: name for name in column_names}
+    
+    while True:
+        col = col_abbreviations.get(input(f"Search by {', '.join(column_names)} ({'/'.join(col_abbreviations.keys())}): >>> "))
+        if col is None:
+            continue
+        search_val = input(f"Enter search value for {col} (can be fragment of value ie 'sm' -> 'smith'): >>> ")
+        break
+    
+    query = f"""SELECT *
+        FROM {table}
+        WHERE {col} = ?
+        """ 
+    result = cu.execute(query, (search_val,))
+    
+    if not result:
+        print(f"{WARNING}No results found{RESET}")
+        return None
+    else:
+        return result.fetchall()
+
+def assign_robes():
+    print("assign robes NOT IMPLEMENTED YET")
 
 
 def robes_menu():
-    all_robes = cu.execute(f"""SELECT
-                                robes.id, students.name FROM robes
-                                LEFT JOIN students ON robes.student_id = students.id""").fetchall()
-
-
-
-    print(f"{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
-    print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17))
+    while True:
+        all_robes = cu.execute(f"""
+        SELECT
+        robes.id, students.name
+        FROM robes
+        LEFT JOIN students ON robes.student_id = students.id
+        WHERE robes.student_id IS NOT 0
+        """).fetchall()
+        
+        print(f"\n{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
+        print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
+        print("Robes list".ljust(14) + "1".ljust(2) + "\n" + "Search robes".ljust(14) + "2".ljust(2) + "\n" + "Assign robes".ljust(14) + "3".ljust(2) + "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
+        
+        
     
-    for i in all_robes:
-        print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
-    sys.exit()
-    #print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
-    #print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Students".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
+        match input(f"Enter an option id: >>> "):
+            case "1":
+                print(f"\n{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
+                print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17))
+                for i in all_robes:
+                    print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
+                while True:
+                    if input(f"\n{BOLD}Press enter to return to robes menu{RESET}") == "":
+                        break
+            case "2":
+               result = search("robes")
+               if result is not None:
+                   print(f"\n{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
+                   print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17))
+                   for i in result:
+                       print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
+                   while True:
+                       if input(f"\n{BOLD}Press enter to return to robes menu{RESET}") == "":
+                           break
+            case "3":
+                assign_robes()
+            case "0":
+                break
+            case _:
+                pass
+
+def students_menu():
+    print("students menu NOT IMPLEMENTED YET")
+
+def songs_menu():
+    print("songs menu NOT IMPLEMENTED YET")
+
+def sheets_menu():
+    print("sheets menu NOT IMPLEMENTED YET")
 
 def main_menu():
     while True:
     
-        print(f"{HEADER}{BOLD}{FAIL}Main  Menu{RESET}".center(16))
+        print(f"\n{HEADER}{BOLD}{FAIL}Main  Menu{RESET}".center(16))
         print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
-        print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Students".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
+        print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Sheets".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
     
-        user_choice = input(f"Enter an option id: ")
+        user_choice = input(f"Enter an option id: >>> ")
         match user_choice:
             case "1":
                 robes_menu()
@@ -76,9 +146,9 @@ def main_menu():
             case "3":
                 songs_menu()
             case "4":
-                students_menu()
+                sheets_menu()
             case "0":
-                sys.exit()
+                sys.exit(0)
             case _:
                 pass
 
