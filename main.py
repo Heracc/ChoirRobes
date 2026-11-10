@@ -30,6 +30,19 @@ def init_sql(db_path, script_path):
     except sql.Error as e:
         print(f"an error occurred: {e}")
 
+def search(table, search_col, search_val):
+   # Courtesy of shane:
+   cu.execute("SELECT * FROM ? LIMIT 0", (table,)) #selects everything from the table but returns 0 rows (limit 0)
+   columns = [desc[0] for desc in cu.description] #gets column names
+   columns.remove(search_col) # 
+   # back to my code:
+   params = (search_col, search_val)
+result = cu.execute("""
+   SELECT *
+   FROM {table}
+   WHERE ? = ?
+   """,)
+
 
 def robes_menu():
     all_robes = cu.execute(f"""SELECT
