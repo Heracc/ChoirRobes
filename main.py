@@ -24,20 +24,22 @@ def close():
 
 atexit.register(close)
 
+# A function to initialize the SQL database using a script file
 def init_sql(db_path, script_path):
     try:
         with open(script_path, "r") as file:
             script = file.read()
 
-        with conn:
-            cu.executescript(script)
-            print(f"{GREEN}SQL database created{RESET}")
+
+        cu.executescript(script)
+        print(f"{GREEN}SQL database created{RESET}")
 
     except FileNotFoundError:
         print(f"{FAIL}Script not found{RESET}")
     except sql.Error as e:
         print(f"{FAIL}An error occurred: {e}{RESET}")
 
+# Search function that searches in any table by any value
 def search(table):
     ### AI MADE THIS CODE, I DONT KNOW IF IT WORKS, BUT IT SHOULD 
     # funnily enough, as i was typing that ai disclaimer, the vs code autocomplete suggested adding the "i dont know if it works, but it should" part
@@ -58,35 +60,91 @@ def search(table):
     
     while True:
         col = col_abbreviations.get(input(f"Search by {', '.join(column_names)} ({'/'.join(col_abbreviations.keys())}): >>> "))
-        if col is None:
+        if col not in col_abbreviations.keys():
+            print(f"{WARNING}Invalid column name{RESET}")
             continue
         search_val = input(f"Enter search value for {col} (can be fragment of value ie 'sm' -> 'smith'): >>> ")
         break
     
-    query = f"""SELECT *
-        FROM {table}
-        WHERE {col} = ?
-        """ 
-    result = cu.execute(query, (search_val,))
+    # ai was used for the if block below
+    # if the user inputs "null", change the query to use the SQL IS NULL operator instead of LIKE; if it was just LIKE it would search for values containing the string "null" instead of searching for null values
+    if search_val.strip().lower() == "null": 
+        query = f"""SELECT *
+            FROM {table}
+            WHERE {col} IS NULL 
+            """
+        result = cu.execute(query).fetchall()
+    else:
+        query = f"""SELECT *
+            FROM {table}
+            WHERE {col} LIKE ?
+            """ 
+        result = cu.execute(query, (f"%{search_val}%",)).fetchall()
     
-    if not result:
+    if result == []:
         print(f"{WARNING}No results found{RESET}")
         return None
     else:
-        return result.fetchall()
+        return result
 
+# Function to assign robes to students (or reassign robes if already assigned)
 def assign_robes():
-    print("assign robes NOT IMPLEMENTED YET")
-
-
+    robe_ids = [row[0] for row in cu.execute(f"SELECT id FROM robes").fetchall()]
+    student_ids = [row[0] for row in cu.execute(f"SELECT id FROM students").fetchall()]
+    
+    all_robes = cu.execute(f"""
+            SELECT
+            robes.id, students.name
+            FROM robes
+            LEFT JOIN students ON robes.student_id = students.id""").fetchall()
+    
+    print(f"\n{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
+    print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17))
+    for i in all_robes:
+        print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
+    print("\n")
+    
+    while True:
+        robe_input = input(f"Enter robe id to assign (or 0 to return to robes menu): >>> ")
+        if robe_input == "0":
+            return
+        elif robe_input not in [str(i[0]) for i in robe_ids]:
+            print(f"{FAIL}Invalid robe id{RESET}")
+            continue
+        else:
+            break
+    
+    while True:
+        student_input = input(f"Enter student id to assign robe {robe_input} to (0 to unassign  q to exit): >>> ")
+        if student_input == "0":
+            cu.execute(f"UPDATE robes SET student_id = NULL WHERE id = ?", (robe_input,))
+            conn.commit()
+            print(f"{GREEN}Robe {robe_input} unassigned{RESET}")
+            break
+        elif student_input.lower() == "q":
+            break
+        elif student_input not in [str(i[0]) for i in student_ids]:
+            print(f"{FAIL}Invalid student id{RESET}")
+            continue
+        # this elif block was created by ai.
+        # it selects one row from robes that has the same student id on a different robe, and if that row exists (indicating the student already has a robe) it displays an error
+        elif cu.execute("SELECT 1 FROM robes WHERE student_id = ? AND id != ?", (student_input, robe_input)).fetchone() is not None:
+            print(f"{BOLD}{FAIL}Student {student_input} already has a robe!{RESET}")
+        else:
+            cu.execute(f"UPDATE robes SET student_id = ? WHERE id = ?", (student_input, robe_input))
+            conn.commit()
+            print(f"{GREEN}Robe {robe_input} assigned to student {student_input}{RESET}")
+            break
+        
+# Robes menu function that displays options for managing robes
 def robes_menu():
     while True:
-        all_robes = cu.execute(f"""
+        assigned_robes = cu.execute(f"""
         SELECT
         robes.id, students.name
         FROM robes
         LEFT JOIN students ON robes.student_id = students.id
-        WHERE robes.student_id IS NOT 0
+        WHERE robes.student_id IS NOT NULL
         """).fetchall()
         
         print(f"\n{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
@@ -99,7 +157,7 @@ def robes_menu():
             case "1":
                 print(f"\n{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
                 print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17))
-                for i in all_robes:
+                for i in assigned_robes:
                     print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
                 while True:
                     if input(f"\n{BOLD}Press enter to return to robes menu{RESET}") == "":
@@ -121,6 +179,7 @@ def robes_menu():
             case _:
                 pass
 
+
 def students_menu():
     print("students menu NOT IMPLEMENTED YET")
 
@@ -130,6 +189,7 @@ def songs_menu():
 def sheets_menu():
     print("sheets menu NOT IMPLEMENTED YET")
 
+# Main menu loop
 def main_menu():
     while True:
     
@@ -153,16 +213,14 @@ def main_menu():
                 pass
 
 
-
-def add_sample_data():
-    pass
-
 if __name__ == "__main__":
     conn = sql.connect(DATABASE_PATH)
     cu = conn.cursor()
-
+    
     init_sql(DATABASE_PATH, 'setup.sql')
     main_menu()
+    
+    
 
 
 """ query for sheets:
