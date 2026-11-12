@@ -1,5 +1,5 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:venv",
     "python.analysis.autoImportCompletions": true,
-    "python.analysis.typeCheckingMode": "basic"
+    "python.analysis.typeCheckingMode": "standard"
 }
