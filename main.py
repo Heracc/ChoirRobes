@@ -60,7 +60,7 @@ def search(table):
     
     while True:
         col = col_abbreviations.get(input(f"Search by {', '.join(column_names)} ({'/'.join(col_abbreviations.keys())}): >>> "))
-        if col not in col_abbreviations.keys():
+        if col not in col_abbreviations.values():
             print(f"{WARNING}Invalid column name{RESET}")
             continue
         search_val = input(f"Enter search value for {col} (can be fragment of value ie 'sm' -> 'smith'): >>> ")
@@ -87,6 +87,37 @@ def search(table):
     else:
         return result
 
+# insert function to add a new record to any table (user isn't allowed to put in the PK)
+def insert(table):
+    
+    cu.execute(f"SELECT * FROM {table} LIMIT 0")
+
+    # the cursor.description attribute contains metadata about the columns in the result
+    # create a list of column names
+    column_names = [desc[0] for desc in cu.description]
+    del column_names[0] # remove the id column from the list
+    column_names = tuple(column_names)
+
+    values = []
+    print(column_names)
+    for i in column_names:
+        values.append(input(f"Value for {i.replace('_',' ')}: >>> "))
+        
+    values = tuple(values)
+    
+    try:
+        cu.execute(f"INSERT INTO {table} ({', '.join(column_names)}) VALUES {values}")
+        conn.commit()
+        print(f"\n{BOLD}{GREEN}Record added successfully{RESET}")
+    except sql.IntegrityError as e:
+        print(f"{BOLD}{WARNING}An error occured: {e}{RESET}")     
+    except sql.Error as e:
+        print(f"{BOLD}{WARNING}Database error: {e}{RESET}")
+
+def delete(table):
+    pass
+
+
 # Function to assign robes to students (or reassign robes if already assigned)
 def assign_robes():
     robe_ids = [row[0] for row in cu.execute(f"SELECT id FROM robes").fetchall()]
@@ -108,7 +139,7 @@ def assign_robes():
         robe_input = input(f"Enter robe id to assign (or 0 to return to robes menu): >>> ")
         if robe_input == "0":
             return
-        elif robe_input not in [str(i[0]) for i in robe_ids]:
+        elif robe_input not in [str(i) for i in robe_ids]:
             print(f"{FAIL}Invalid robe id{RESET}")
             continue
         else:
@@ -123,15 +154,15 @@ def assign_robes():
             break
         elif student_input.lower() == "q":
             break
-        elif student_input not in [str(i[0]) for i in student_ids]:
+        elif student_input not in [str(i) for i in student_ids]:
             print(f"{FAIL}Invalid student id{RESET}")
             continue
         # this elif block was created by ai.
-        # it selects one row from robes that has the same student id on a different robe, and if that row exists (indicating the student already has a robe) it displays an error
+        # it selects one row from robes that has the same student id on a different robe, and if that row exists (indicating the student already has a robe) it displays an errorline 111, in assign_robes
         elif cu.execute("SELECT 1 FROM robes WHERE student_id = ? AND id != ?", (student_input, robe_input)).fetchone() is not None:
             print(f"{BOLD}{FAIL}Student {student_input} already has a robe!{RESET}")
         else:
-            cu.execute(f"UPDATE robes SET student_id = ? WHERE id = ?", (student_input, robe_input))
+            cu.execute("UPDATE robes SET student_id = ? WHERE id = ?", (student_input, robe_input))
             conn.commit()
             print(f"{GREEN}Robe {robe_input} assigned to student {student_input}{RESET}")
             break
@@ -156,32 +187,71 @@ def robes_menu():
         match input(f"Enter an option id: >>> "):
             case "1":
                 print(f"\n{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
-                print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17))
+                print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id     ".ljust(12) + f"Owner             {RESET}".ljust(17))
                 for i in assigned_robes:
                     print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
                 while True:
                     if input(f"\n{BOLD}Press enter to return to robes menu{RESET}") == "":
                         break
             case "2":
-               result = search("robes")
-               if result is not None:
-                   print(f"\n{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
-                   print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17))
-                   for i in result:
-                       print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
-                   while True:
-                       if input(f"\n{BOLD}Press enter to return to robes menu{RESET}") == "":
-                           break
+                result = search("robes")
+                if result is None:
+                    pass
+                else:
+                    print(f"\n{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
+                    print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17))
+                    for i in result:
+                        print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
+                    while True:
+                        if input(f"\n{BOLD}Press enter to return to robes menu{RESET}") == "":
+                            break
+                
             case "3":
                 assign_robes()
             case "0":
                 break
             case _:
-                pass
+                print("Bad input. Check that the option you inputted exists.")
 
 
 def students_menu():
-    print("students menu NOT IMPLEMENTED YET")
+    while True:
+        all_students = cu.execute("SELECT * FROM students").fetchall()
+        print(f"\n{HEADER}{BOLD}{FAIL}Students{RESET}".center(19))
+        print(f"{BOLD}{UNDERLINE}{BLUE}Option          id{RESET}")
+        print("View roster".ljust(16) + "1".ljust(2) + "\n" + "Search students".ljust(16) + "2".ljust(2) + "\n" + "Add Students".ljust(16) + "3".ljust(2) + "\n" + "Delete Students".ljust(16) + "4".ljust(2) + "\n" + "Quit".ljust(16) + "0".ljust(2) + "\n")
+
+        match input(f"Enter an option id: >>> "):
+            case "1":
+                print(f"\n{HEADER}{BOLD}{FAIL}Students{RESET}".center(17))
+                print(f"{BOLD}{UNDERLINE}{BLUE}Student Id   ".ljust(13) + f"Name                ".ljust(20) + f"Grade{RESET}".ljust(5))
+                for i in all_students:
+                    print(f"{i[0]}".ljust(13) + f"{i[1]}".ljust(20) + f"{i[2]}".ljust(5))
+                while True:
+                    if input(f"\n{BOLD}Press enter to return to students menu{RESET}") == "":
+                        break
+            case "2":
+                result = search("students")
+                if result is None:
+                    pass
+                else:
+                    print(f"\n{HEADER}{BOLD}{FAIL}Student{RESET}".center(17))
+                    print(f"{BOLD}{UNDERLINE}{BLUE}Student Id   ".ljust(13) + f"Name                ".ljust(20) + f"Grade{RESET}".ljust(5))
+                    for i in result:
+                        print(f"{i[0]}".ljust(13) + f"{i[1]}".ljust(20) + f"{i[2]}".ljust(5))
+                    while True:
+                        if input(f"\n{BOLD}Press enter to return to students menu{RESET}") == "":
+                            break
+            case "3":
+                insert('students')
+            case "4":
+                pass
+            case "0":
+                break
+       
+
+    
+
 
 def songs_menu():
     print("songs menu NOT IMPLEMENTED YET")
@@ -210,13 +280,13 @@ def main_menu():
             case "0":
                 sys.exit(0)
             case _:
-                pass
+                print("Bad input. Check that the option you inputted exists.")
 
 
 if __name__ == "__main__":
     conn = sql.connect(DATABASE_PATH)
     cu = conn.cursor()
-    
+ 
     init_sql(DATABASE_PATH, 'setup.sql')
     main_menu()
     
