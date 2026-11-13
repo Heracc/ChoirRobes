@@ -113,8 +113,22 @@ def insert(table):
         print(f"{BOLD}{WARNING}Database error: {e}{RESET}")
 
 def delete(table):
-    pass
-
+    row_to_delete = search(table)
+    
+    match table:
+        case 'robes':
+            #put the headers for each specific table here like so:
+            print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17)) 
+        case 'students':
+            pass
+        case 'pieces':
+            pass
+        case 'sheets':
+            pass
+        case _:
+            print(f"{BOLD}{WARNING}Invalid Table{RESET}")
+    # show row, get confirmation, run query ("DELETE FROM {table} WHERE id = ?",(row_to_delete[0]))
+    # confirm that row_to_delete[0] will sgive id
 
 # Function to assign robes to students (or reassign robes if already assigned)
 def assign_robes():
