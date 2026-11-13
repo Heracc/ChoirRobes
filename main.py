@@ -22,8 +22,6 @@ def close():
     conn.close()
     print(f"{GREEN}{BOLD}{UNDERLINE}Database connection closed{RESET}")
 
-atexit.register(close)
-
 # A function to initialize the SQL database using a script file
 def init_sql(script_path):
     try:
@@ -286,6 +284,8 @@ def main_menu():
 if __name__ == "__main__":
     conn = sql.connect(DATABASE_PATH)
     cu = conn.cursor()
+
+    atexit.register(close)
 
     init_sql('setup.sql')
     main_menu()
