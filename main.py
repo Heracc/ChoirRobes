@@ -1,8 +1,10 @@
+import atexit
 import sqlite3 as sql
 import sys
-import atexit
-### use * or ** and like args/kwargs or whatever to have one universal add/delete function that changes to fit wherever its used
+
 ###  make it so that the search function has left joins by using a dictionary of tables and their joins
+
+### If you see a comment that starts with 'noinspect', that's from me having to supress useless PyCharm warnings
 
 DATABASE_PATH = 'choir.db'
 
@@ -38,7 +40,8 @@ def init_sql(script_path):
         print(f"{FAIL}An error occurred: {e}{RESET}")
 
 # Search function that searches in any table by any value
-def search(table):
+# noinspection GrazieInspection
+def search(table, source = None):
     ### AI MADE THIS CODE, I DONT KNOW IF IT WORKS, BUT IT SHOULD
     # funnily enough, as i was typing that ai disclaimer, the vs code autocomplete suggested adding the "i dont know if it works, but it should" part
     # the code does work, but it is not very user friendly, and it is not very flexible, and it is not very efficient, and it is not very secure, and it is not very robust, and it is not very maintainable, and it is not very readable, and it is not very testable, and it is not very reusable, and it is not very extensible, and it is not very scalable, and it is not very performant, and it is not very reliable, and it is not very portable, and it is not very compatible, and it is not very interoperable, and it is not very standard-compliant, and it is not very best-practice-compliant, and it is not very industry-standard-compliant, and it is not very professional-grade-compliant, and it is not very enterprise-grade-compliant, and it is not very mission-critical-compliant, and it is not very high-availability-compliant, and it is not very fault-tolerant-compliant, and it is not very disaster-recovery-compliant, and it is not very business-continuity-compliant, and it is not very regulatory-compliant, and it is not very legal-compliant, and it is not very ethical-compliant, and it is not very moral-compliant, and it is not very socially-responsible-compliant, and it is not very environmentally-friendly-compliant, and it is not very sustainable-compliant, and it is not very green-compliant, and it is not very eco-friendly-compliant, and it is not very carbon-neutral-compliant, and it is not very energy-efficient-compliant, and it is not very water-efficient-compliant, and it is not very waste-efficient-compliant, and it is not very resource-efficient-compliant, and it is not very cost-efficient-compliant, and.
@@ -51,7 +54,8 @@ def search(table):
 
     # the cursor.description attribute contains metadata about the columns in the result
     # create a list of column names
-    column_names = [desc[0] for desc in cu.description]
+    # noinspection string-conversion-without-dunder-method
+    column_names = [str(desc[0]) for desc in cu.description]
     ### end AI code
 
     col_abbreviations = {name[0]: name for name in column_names}
@@ -61,18 +65,24 @@ def search(table):
         if col not in col_abbreviations.values():
             print(f"{WARNING}Invalid column name{RESET}")
             continue
+        # noinspection string-conversion-without-dunder-method
         search_val = input(f"Enter search value for {col} (can be fragment of value ie 'sm' -> 'smith'): >>> ")
         break
 
     # AI was used for the if block below
     # if the user inputs "null", change the query to use the SQL IS NULL operator instead of LIKE; if it was just LIKE it would search for values containing the string "null" instead of searching for null values
+    # noinspection unbound-local-variable
     if search_val.strip().lower() == "null":
         query = f"""SELECT *
             FROM {table}
             WHERE {col} IS NULL 
             """
-        result = cu.execute(query).fetchall()
+        if source == 'delete':
+            result = cu.execute(query).fetchone()
+        else:
+            result = cu.execute(query).fetchall()
     else:
+        # noinspection string-conversion-without-dunder-method
         query = f"""SELECT *
             FROM {table}
             WHERE {col} LIKE ?
@@ -92,7 +102,7 @@ def insert(table):
 
     # the cursor.description attribute contains metadata about the columns in the result
     # create a list of column names
-    column_names = [desc[0] for desc in cu.description]
+    column_names = [str(desc[0]) for desc in cu.description]
     del column_names[0] # remove the id column from the list
     column_names = tuple(column_names)
 
@@ -113,14 +123,15 @@ def insert(table):
         print(f"{BOLD}{WARNING}Database error: {e}{RESET}")
 
 def delete(table):
-    row_to_delete = search(table)
+    row_to_delete = search(table, 'delete')
     
     match table:
-        case 'robes':
-            #put the headers for each specific table here like so:
-            print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id    ".ljust(12) + f"Owner             {RESET}".ljust(17)) 
-        case 'students':
+        case "robes":
             pass
+        case 'students':
+            print(f"{BOLD}{UNDERLINE}{BLUE}Student Id   ".ljust(13) + f"Name                ".ljust(20) + f"Grade{RESET}".ljust(5))
+            print(f"{row_to_delete[0]}".ljust(13) + f"{row_to_delete[1]}".ljust(20) + f"{row_to_delete[2]}".ljust(5))
+            input(f"Are you sure you want to delete this student? Type 'delete {row_to_delete[1]}' to confirm: >>>")
         case 'pieces':
             pass
         case 'sheets':
@@ -262,9 +273,6 @@ def students_menu():
                 break
 
 
-
-
-
 def songs_menu():
     print("songs menu NOT IMPLEMENTED YET")
 
@@ -302,6 +310,7 @@ if __name__ == "__main__":
     atexit.register(close)
 
     init_sql('setup.sql')
+    delete('robes')
     main_menu()
 
 
