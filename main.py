@@ -61,12 +61,12 @@ def search(table, source = None):
     col_abbreviations = {name[0]: name for name in column_names}
 
     while True:
-        col = col_abbreviations.get(input(f"Search by {', '.join(column_names)} ({'/'.join(col_abbreviations.keys())}): >>> "))
+        col = col_abbreviations.get(input(f"Search by {', '.join(column_names)} ({'/'.join(col_abbreviations.keys())}): >>> ").strip())
         if col not in col_abbreviations.values():
             print(f"{WARNING}Invalid column name{RESET}")
             continue
         # noinspection string-conversion-without-dunder-method
-        search_val = input(f"Enter search value for {col} (can be fragment of value ie 'sm' -> 'smith'): >>> ")
+        search_val = input(f"Enter search value for {col} (can be fragment of value ie 'sm' -> 'smith'): >>> ").strip()
         break
 
     # AI was used for the if block below
@@ -87,7 +87,11 @@ def search(table, source = None):
             FROM {table}
             WHERE {col} LIKE ?
             """
-        result = cu.execute(query, (f"%{search_val}%",)).fetchall()
+        if source == 'delete':
+            result = cu.execute(query, (f"%{search_val}%",)).fetchone()
+        else:
+            result = cu.execute(query, (f"%{search_val}%",)).fetchall()
+        
 
     if not result:
         print(f"{WARNING}No results found{RESET}")
@@ -109,7 +113,7 @@ def insert(table):
     values = []
     print(column_names)
     for i in column_names:
-        values.append(input(f"Value for {i.replace('_',' ')}: >>> "))
+        values.append(input(f"Value for {i.replace('_',' ')}: >>> ").strip())
 
     values = tuple(values)
 
@@ -124,22 +128,43 @@ def insert(table):
 
 def delete(table):
     row_to_delete = search(table, 'delete')
-    
-    match table:
-        case "robes":
-            pass
-        case 'students':
-            print(f"{BOLD}{UNDERLINE}{BLUE}Student Id   ".ljust(13) + f"Name                ".ljust(20) + f"Grade{RESET}".ljust(5))
-            print(f"{row_to_delete[0]}".ljust(13) + f"{row_to_delete[1]}".ljust(20) + f"{row_to_delete[2]}".ljust(5))
-            input(f"Are you sure you want to delete this student? Type 'delete {row_to_delete[1]}' to confirm: >>>")
-        case 'pieces':
-            pass
-        case 'sheets':
-            pass
-        case _:
-            print(f"{BOLD}{WARNING}Invalid Table{RESET}")
-    # show row, get confirmation, run query ("DELETE FROM {table} WHERE id = ?",(row_to_delete[0]))
-    # confirm that row_to_delete[0] will sgive id
+    if row_to_delete is None:
+        return
+    else:
+        match table:
+            case "robes":
+                print("Those robes are like 40 years old... They've lasted this long, don't go deleting them now! \n (There's really no reason that one of the robes would need to be deleted so I didn't add the functionality.)")
+            case 'students':
+                print(f"{BOLD}{UNDERLINE}{BLUE}Student Id   ".ljust(13) + f"Name                ".ljust(20) + f"Grade{RESET}".ljust(5))
+                print(f"{row_to_delete[0]}".ljust(13) + f"{row_to_delete[1]}".ljust(20) + f"{row_to_delete[2]}".ljust(5))
+                while True:
+                    conf = input(f"Are you sure you want to delete this student? Type 'delete {row_to_delete[1]}' to confirm or type q to quit: >>> ").strip()
+                    if conf == f"delete {row_to_delete[1]}":
+                        try: 
+                            cu.execute(f"DELETE FROM students WHERE id = {row_to_delete[0]}")
+                            conn.commit()
+                            print(f"{BOLD}{UNDERLINE}{GREEN}Student deleted successfully{RESET}") 
+                        except sql.OperationalError as oe:
+                            print(f"{BOLD}{WARNING}An operational error occured: {oe}{RESET}")
+                            break
+                        except sql.IntegrityError as ie:
+                            print(f"{BOLD}{WARNING}An integrity error occured: {ie}{RESET}")
+                            break
+                        except sql.DatabaseError as de:
+                            print(f"{BOLD}{WARNING}A database error occured: {de}{RESET}")
+                        except sql.Error as e:
+                            print(f"{BOLD}{WARNING}An error occured: {e}{RESET}")
+                        break
+                    elif conf == 'q':
+                        print(f"{BOLD}{HEADER}Deletion cancelled{RESET}")
+                        break
+                    else: continue
+            case 'pieces':
+                pass
+            case 'sheets':
+                pass
+            case _:
+                print(f"{BOLD}{WARNING}Invalid Table{RESET}")
 
 # Function to assign robes to students (or reassign robes if already assigned)
 def assign_robes():
@@ -159,7 +184,7 @@ def assign_robes():
     print("\n")
 
     while True:
-        robe_input = input(f"Enter robe id to assign (or 0 to return to robes menu): >>> ")
+        robe_input = input(f"Enter robe id to assign (or 0 to return to robes menu): >>> ").strip()
         if robe_input == "0":
             return
         elif robe_input not in [str(i) for i in robe_ids]:
@@ -169,7 +194,7 @@ def assign_robes():
             break
 
     while True:
-        student_input = input(f"Enter student id to assign robe {robe_input} to (0 to unassign  q to exit): >>> ")
+        student_input = input(f"Enter student id to assign robe {robe_input} to (0 to unassign  q to exit): >>> ").strip()
         if student_input == "0":
             cu.execute(f"UPDATE robes SET student_id = NULL WHERE id = ?", (robe_input,))
             conn.commit()
@@ -199,6 +224,7 @@ def robes_menu():
         FROM robes
         LEFT JOIN students ON robes.student_id = students.id
         WHERE robes.student_id IS NOT NULL
+        ORDER BY robes.id ASC
         """).fetchall()
 
         print(f"\n{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
@@ -207,7 +233,7 @@ def robes_menu():
 
 
 
-        match input(f"Enter an option id: >>> "):
+        match input(f"Enter an option id: >>> ").strip():
             case "1":
                 print(f"\n{HEADER}{BOLD}{FAIL}Robes{RESET}".center(17))
                 print(f"{BOLD}{UNDERLINE}{BLUE}Robe Id     ".ljust(12) + f"Owner             {RESET}".ljust(17))
@@ -236,7 +262,6 @@ def robes_menu():
             case _:
                 print("Bad input. Check that the option you inputted exists.")
 
-
 def students_menu():
     while True:
         all_students = cu.execute("SELECT * FROM students").fetchall()
@@ -244,7 +269,7 @@ def students_menu():
         print(f"{BOLD}{UNDERLINE}{BLUE}Option          id{RESET}")
         print("View roster".ljust(16) + "1".ljust(2) + "\n" + "Search students".ljust(16) + "2".ljust(2) + "\n" + "Add Students".ljust(16) + "3".ljust(2) + "\n" + "Delete Students".ljust(16) + "4".ljust(2) + "\n" + "Quit".ljust(16) + "0".ljust(2) + "\n")
 
-        match input(f"Enter an option id: >>> "):
+        match input(f"Enter an option id: >>> ").strip():
             case "1":
                 print(f"\n{HEADER}{BOLD}{FAIL}Students{RESET}".center(17))
                 print(f"{BOLD}{UNDERLINE}{BLUE}Student Id   ".ljust(13) + f"Name                ".ljust(20) + f"Grade{RESET}".ljust(5))
@@ -268,10 +293,9 @@ def students_menu():
             case "3":
                 insert('students')
             case "4":
-                pass
+                delete('students')
             case "0":
                 break
-
 
 def songs_menu():
     print("songs menu NOT IMPLEMENTED YET")
@@ -287,7 +311,7 @@ def main_menu():
         print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
         print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Sheets".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
 
-        user_choice = input(f"Enter an option id: >>> ")
+        user_choice = input(f"Enter an option id: >>> ").strip()
         match user_choice:
             case "1":
                 robes_menu()
@@ -310,7 +334,7 @@ if __name__ == "__main__":
     atexit.register(close)
 
     init_sql('setup.sql')
-    delete('robes')
+    #delete('students')
     main_menu()
 
 
