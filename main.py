@@ -162,7 +162,30 @@ def delete(table):
             case 'pieces':
                 pass
             case 'sheets':
-                pass
+                print(f"{BOLD}{UNDERLINE}{BLUE}Sheet Id   ".ljust(10) + f"Piece Id                ".ljust(20) + f"Owner Id{RESET}".ljust(7))
+                print(f"{row_to_delete[0]}".ljust(13) + f"{row_to_delete[1]}".ljust(20) + f"{row_to_delete[2]}".ljust(7))
+                while True:
+                    conf = input(f"Are you sure you want to delete this sheet? Type 'delete sheet {row_to_delete[0]}' to confirm or type q to quit: >>> ").strip()
+                    if conf == f"delete sheet {row_to_delete[0]}":
+                        try: 
+                            cu.execute(f"DELETE FROM sheets WHERE id = {row_to_delete[0]}")
+                            conn.commit()
+                            print(f"{BOLD}{UNDERLINE}{GREEN}Sheet deleted successfully{RESET}") 
+                        except sql.OperationalError as oe:
+                            print(f"{BOLD}{WARNING}An operational error occured: {oe}{RESET}")
+                            break
+                        except sql.IntegrityError as ie:
+                            print(f"{BOLD}{WARNING}An integrity error occured: {ie}{RESET}")
+                            break
+                        except sql.DatabaseError as de:
+                            print(f"{BOLD}{WARNING}A database error occured: {de}{RESET}")
+                        except sql.Error as e:
+                            print(f"{BOLD}{WARNING}An error occured: {e}{RESET}")
+                        break
+                    elif conf == 'q':
+                        print(f"{BOLD}{HEADER}Deletion cancelled{RESET}")
+                        break
+                    else: continue
             case _:
                 print(f"{BOLD}{WARNING}Invalid Table{RESET}")
 
@@ -203,12 +226,12 @@ def assign_robes():
         elif student_input.lower() == "q":
             break
         elif student_input not in [str(i) for i in student_ids]:
-            print(f"{FAIL}Invalid student id{RESET}")
+            print(f"{BOLD}{WARNING}Invalid student id{RESET}")
             continue
         # this elif block was created by AI.
         # it selects one row from robes that has the same student id on a different robe, and if that row exists (indicating the student already has a robe) it displays an error
         elif cu.execute("SELECT 1 FROM robes WHERE student_id = ? AND id != ?", (student_input, robe_input)).fetchone() is not None:
-            print(f"{BOLD}{FAIL}Student {student_input} already has a robe!{RESET}")
+            print(f"{BOLD}{WARNING}Student {student_input} already has a robe!{RESET}")
         else:
             cu.execute("UPDATE robes SET student_id = ? WHERE id = ?", (student_input, robe_input))
             conn.commit()
@@ -240,7 +263,7 @@ def robes_menu():
                 for i in assigned_robes:
                     print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
                 while True:
-                    if input(f"\n{BOLD}Press enter to return to robes menu{RESET}") == "":
+                    if input(f"\n{BOLD}{HEADER}Press enter to return to robes menu{RESET}") == "":
                         break
             case "2":
                 result = search("robes")
@@ -252,7 +275,7 @@ def robes_menu():
                     for i in result:
                         print(f"{i[0]}".ljust(12) + f"{i[1]}".ljust(17))
                     while True:
-                        if input(f"\n{BOLD}Press enter to return to robes menu{RESET}") == "":
+                        if input(f"\n{BOLD}{HEADER}Press enter to return to robes menu{RESET}") == "":
                             break
 
             case "3":
@@ -276,7 +299,7 @@ def students_menu():
                 for i in all_students:
                     print(f"{i[0]}".ljust(13) + f"{i[1]}".ljust(20) + f"{i[2]}".ljust(5))
                 while True:
-                    if input(f"\n{BOLD}Press enter to return to students menu{RESET}") == "":
+                    if input(f"\n{BOLD}{HEADER}Press enter to return to students menu{RESET}") == "":
                         break
             case "2":
                 result = search("students")
@@ -288,7 +311,7 @@ def students_menu():
                     for i in result:
                         print(f"{i[0]}".ljust(13) + f"{i[1]}".ljust(20) + f"{i[2]}".ljust(5))
                     while True:
-                        if input(f"\n{BOLD}Press enter to return to students menu{RESET}") == "":
+                        if input(f"\n{BOLD}{HEADER}Press enter to return to students menu{RESET}") == "":
                             break
             case "3":
                 insert('students')
@@ -301,7 +324,48 @@ def songs_menu():
     print("songs menu NOT IMPLEMENTED YET")
 
 def sheets_menu():
-    print("sheets menu NOT IMPLEMENTED YET")
+    while True:
+        all_sheets = cu.execute("""
+SELECT
+sheets.id,
+pieces.title,
+students.name
+FROM sheets
+LEFT JOIN pieces ON sheets.piece_id = pieces.id
+LEFT JOIN students ON sheets.student_id = students.id
+ORDER BY sheets.piece_id ASC;
+""")
+        print(f"\n{HEADER}{BOLD}{FAIL}Sheet Music{RESET}".center(19))
+        print(f"{BOLD}{UNDERLINE}{BLUE}Option          id{RESET}")
+        print("View all sheets".ljust(16) + "1".ljust(2) + "\n" + "Search sheets".ljust(16) + "2".ljust(2) + "\n" + "Add sheets".ljust(16) + "3".ljust(2) + "\n" + "Delete sheets".ljust(16) + "4".ljust(2) + "\n" + "Quit".ljust(16) + "0".ljust(2) + "\n")
+        
+        match input(f"Enter an option id: >>> ").strip():
+            case "1":
+                print(f"\n{HEADER}{BOLD}{FAIL}Sheets{RESET}".center(17))
+                print(f"{BOLD}{UNDERLINE}{BLUE}Sheet Id  ".ljust(10) + f"Title                ".ljust(20) + f"Owner{RESET}".ljust(17))
+                for i in all_sheets:
+                    print(f"{i[0]}".ljust(10) + f"{i[1]}".ljust(20) + f"{i[2]}".ljust(17))
+                while True:
+                    if input(f"\n{BOLD}{HEADER}Press enter to return to sheets menu{RESET}") == "":
+                        break
+            case "2":
+                result = search("sheets")
+                if result is None:
+                    pass
+                else:
+                    print(f"\n{HEADER}{BOLD}{FAIL}Sheets{RESET}".center(17))
+                    print(f"{BOLD}{UNDERLINE}{BLUE}Sheet Id   ".ljust(10) + f"Title                ".ljust(20) + f"Owner{RESET}".ljust(17))
+                    for i in result:
+                        print(f"{i[0]}".ljust(10) + f"{i[1]}".ljust(20) + f"{i[2]}".ljust(17))
+                    while True:
+                        if input(f"\n{BOLD}{HEADER}Press enter to return to sheets menu{RESET}") == "":
+                            break
+            case "3":
+                insert('sheets')
+            case "4":
+                delete('sheets')
+            case "0":
+                break
 
 # Main menu loop
 def main_menu():
@@ -324,7 +388,7 @@ def main_menu():
             case "0":
                 sys.exit(0)
             case _:
-                print("Bad input. Check that the option you inputted exists.")
+                print(f"{BOLD}{WARNING}Bad input. Check that the option you inputted exists.{RESET}")
 
 
 if __name__ == "__main__":
@@ -334,17 +398,4 @@ if __name__ == "__main__":
     atexit.register(close)
 
     init_sql('setup.sql')
-    #delete('students')
     main_menu()
-
-
-""" query for sheets:
-SELECT
-    sheets.id as Sheet_ID,
-    pieces.title as Piece_ID,
-    students.name as Owner
-FROM sheets
-LEFT JOIN pieces ON sheets.piece_id = pieces.id
-LEFT JOIN students ON sheets.student_id = students.id
-ORDER BY (whatever you want);
-"""
