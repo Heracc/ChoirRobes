@@ -75,7 +75,7 @@ def search(table, source = None):
     if search_val.strip().lower() == "null":
         query = f"""SELECT *
             FROM {table}
-            WHERE {col} IS NULL 
+            WHERE {col} IS NULL
             """
         if source == 'delete':
             result = cu.execute(query).fetchone()
@@ -91,7 +91,7 @@ def search(table, source = None):
             result = cu.execute(query, (f"%{search_val}%",)).fetchone()
         else:
             result = cu.execute(query, (f"%{search_val}%",)).fetchall()
-        
+
 
     if not result:
         print(f"{WARNING}No results found{RESET}")
@@ -119,10 +119,10 @@ def insert(table):
     for i in values:
         placeholders += ("?,")
     placeholders = placeholders.rstrip(",") + ")"
-    
-    
+
+
     try:
-        cu.execute(f"INSERT INTO {table} ({', '.join(column_names)}) VALUES {placeholders}", values)
+        cu.execute(f"INSERT INTO {table} ({', '.join(column_names)}) VALUES ({placeholders})", values)
         conn.commit()
         print(f"\n{BOLD}{GREEN}Record added successfully{RESET}")
     except sql.IntegrityError as e:
@@ -144,10 +144,10 @@ def delete(table):
                 while True:
                     conf = input(f"Are you sure you want to delete this student? Type 'delete {row_to_delete[1]}' to confirm or type q to quit: >>> ").strip()
                     if conf == f"delete {row_to_delete[1]}":
-                        try: 
+                        try:
                             cu.execute(f"DELETE FROM students WHERE id = {row_to_delete[0]}")
                             conn.commit()
-                            print(f"{BOLD}{UNDERLINE}{GREEN}Student deleted successfully{RESET}") 
+                            print(f"{BOLD}{UNDERLINE}{GREEN}Student deleted successfully{RESET}")
                         except sql.OperationalError as oe:
                             print(f"{BOLD}{WARNING}An operational error occured: {oe}{RESET}")
                             break
@@ -171,10 +171,10 @@ def delete(table):
                 while True:
                     conf = input(f"Are you sure you want to delete this sheet? Type 'delete sheet {row_to_delete[0]}' to confirm or type q to quit: >>> ").strip()
                     if conf == f"delete sheet {row_to_delete[0]}":
-                        try: 
+                        try:
                             cu.execute(f"DELETE FROM sheets WHERE id = {row_to_delete[0]}")
                             conn.commit()
-                            print(f"{BOLD}{UNDERLINE}{GREEN}Sheet deleted successfully{RESET}") 
+                            print(f"{BOLD}{UNDERLINE}{GREEN}Sheet deleted successfully{RESET}")
                         except sql.OperationalError as oe:
                             print(f"{BOLD}{WARNING}An operational error occured: {oe}{RESET}")
                             break
@@ -335,7 +335,7 @@ def songs_menu():
         print(f"\n{HEADER}{BOLD}{FAIL}Pieces{RESET}".center(19))
         print(f"{BOLD}{UNDERLINE}{BLUE}Option          id{RESET}")
         print("View all pieces".ljust(16) + "1".ljust(2) + "\n" + "Search pieces".ljust(16) + "2".ljust(2) + "\n" + "Add pieces".ljust(16) + "3".ljust(2) + "\n" + "Delete pieces".ljust(16) + "4".ljust(2) + "\n" + "Quit".ljust(16) + "0".ljust(2) + "\n")
-    
+
         match input(f"Enter an option id: >>> ").strip():
             case "1":
                 print(f"\n{HEADER}{BOLD}{FAIL}Pieces{RESET}".center(17))
@@ -379,7 +379,7 @@ ORDER BY sheets.piece_id ASC;
         print(f"\n{HEADER}{BOLD}{FAIL}Sheet Music{RESET}".center(19))
         print(f"{BOLD}{UNDERLINE}{BLUE}Option          id{RESET}")
         print("View all sheets".ljust(16) + "1".ljust(2) + "\n" + "Search sheets".ljust(16) + "2".ljust(2) + "\n" + "Add sheets".ljust(16) + "3".ljust(2) + "\n" + "Delete sheets".ljust(16) + "4".ljust(2) + "\n" + "Quit".ljust(16) + "0".ljust(2) + "\n")
-        
+
         match input(f"Enter an option id: >>> ").strip():
             case "1":
                 print(f"\n{HEADER}{BOLD}{FAIL}Sheets{RESET}".center(17))
@@ -411,7 +411,7 @@ ORDER BY sheets.piece_id ASC;
 # Main menu loop
 def main_menu():
     while True:
-    
+
         print(f"\n{HEADER}{BOLD}{FAIL}Main  Menu{RESET}".center(16))
         print(f"{BOLD}{UNDERLINE}{BLUE}Option        id{RESET}")
         print("Robes".ljust(14) + "1".ljust(2) + "\n" + "Students".ljust(14) + "2".ljust(2) + "\n" + "Songs".ljust(14) + "3".ljust(2) + "\n" + "Sheets".ljust(14) + "4".ljust(2)+ "\n" + "Quit".ljust(14) + "0".ljust(2) + "\n")
