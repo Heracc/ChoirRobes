@@ -111,14 +111,18 @@ def insert(table):
     column_names = tuple(column_names)
 
     values = []
-    print(column_names)
     for i in column_names:
         values.append(input(f"Value for {i.replace('_',' ')}: >>> ").strip())
 
     values = tuple(values)
-
+    placeholders = "("
+    for i in values:
+        placeholders += ("?,")
+    placeholders = placeholders.rstrip(",") + ")"
+    
+    
     try:
-        cu.execute(f"INSERT INTO {table} ({', '.join(column_names)}) VALUES {values}")
+        cu.execute(f"INSERT INTO {table} ({', '.join(column_names)}) VALUES {placeholders}", values)
         conn.commit()
         print(f"\n{BOLD}{GREEN}Record added successfully{RESET}")
     except sql.IntegrityError as e:
@@ -321,7 +325,44 @@ def students_menu():
                 break
 
 def songs_menu():
-    print("songs menu NOT IMPLEMENTED YET")
+    while True:
+        all_pieces = cu.execute("""
+    SELECT
+    id,
+    title
+    FROM pieces
+    """)
+        print(f"\n{HEADER}{BOLD}{FAIL}Pieces{RESET}".center(19))
+        print(f"{BOLD}{UNDERLINE}{BLUE}Option          id{RESET}")
+        print("View all pieces".ljust(16) + "1".ljust(2) + "\n" + "Search pieces".ljust(16) + "2".ljust(2) + "\n" + "Add pieces".ljust(16) + "3".ljust(2) + "\n" + "Delete pieces".ljust(16) + "4".ljust(2) + "\n" + "Quit".ljust(16) + "0".ljust(2) + "\n")
+    
+        match input(f"Enter an option id: >>> ").strip():
+            case "1":
+                print(f"\n{HEADER}{BOLD}{FAIL}Pieces{RESET}".center(17))
+                print(f"{BOLD}{UNDERLINE}{BLUE}Piece Id  ".ljust(10) + f"Title                {RESET}".ljust(20))
+                for i in all_pieces:
+                    print(f"{i[0]}".ljust(10) + f"{i[1]}".ljust(20))
+                while True:
+                    if input(f"\n{BOLD}{HEADER}Press enter to return to pieces menu{RESET}") == "":
+                        break
+            case "2":
+                result = search("pieces")
+                if result is None:
+                    pass
+                else:
+                    print(f"\n{HEADER}{BOLD}{FAIL}Pieces{RESET}".center(17))
+                    print(f"{BOLD}{UNDERLINE}{BLUE}Piece Id  ".ljust(10) + f"Title                {RESET}".ljust(20))
+                    for i in result:
+                        print(f"{i[0]}".ljust(10) + f"{i[1]}".ljust(20))
+                    while True:
+                        if input(f"\n{BOLD}{HEADER}Press enter to return to pieces menu{RESET}") == "":
+                            break
+            case "3":
+                insert('pieces')
+            case "4":
+                delete('pieces')
+            case "0":
+                break
 
 def sheets_menu():
     while True:
