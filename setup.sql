@@ -2,7 +2,7 @@ PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS students (
     id INTEGER PRIMARY KEY,
-    name TEXT,
+    name TEXT UNIQUE NOT NULL,
     grade INTEGER CHECK (grade >= 9 AND grade <= 12)
 );
 
